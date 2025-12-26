@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celesti-hell | Skin Vault</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #0f0e13; color: #fff; font-family: 'Segoe UI', sans-serif; }
+        .vault-container { max-width: 80rem; margin: 0 auto; }
+        
+        /* Card Styling */
+        .skin-card { background: #1a1825; border: 1px solid #2a2737; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; border-radius: 0.85rem; }
+        .skin-card:hover { border-color: #783CB5; transform: translateY(-4px); box-shadow: 0 10px 30px rgba(120, 60, 181, 0.2); }
+        
+        .badge { position: absolute; top: 0.75rem; right: 0.75rem; font-size: 10px; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 4px; z-index: 10; text-transform: uppercase; }
+        .guisi-badge-free { color: #84cc16; background: rgba(132, 204, 22, 0.15); border: 1px solid rgba(132, 204, 22, 0.3); }
+        .guisi-badge-paid { color: #fbbf24; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); }
+        
+        /* Input & Controls */
+        .search-input { background: #0f0e13; border: 1px solid #2a2737; border-radius: 0.75rem; padding: 0.5rem 1rem 0.5rem 2.5rem; font-size: 0.875rem; color: white; width: 100%; transition: 0.2s; }
+        .search-input:focus { outline: none; border-color: #783CB5; box-shadow: 0 0 0 2px rgba(120, 60, 181, 0.2); }
+
+        .btn-primary { background: #783CB5; font-weight: 700; text-align: center; border-radius: 0.5rem; transition: 0.2s; }
+        .btn-primary:hover { background: #9333ea; filter: brightness(1.1); }
+        
+        .page-nav-btn { background: #1a1825; border: 1px solid #2a2737; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; transition: 0.2s; }
+        .page-nav-btn:hover:not(:disabled) { border-color: #783CB5; background: #242135; }
+        .page-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .filter-tab { padding: 0.25rem 1.25rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; transition: 0.2s; cursor: pointer; color: #9ca3af; }
+        .filter-tab.active { background: #783CB5; color: white; box-shadow: 0 4px 12px rgba(120, 60, 181, 0.3); }
+
+        .loader-spin { border: 3px solid rgba(255,255,255,0.05); border-top-color: #783CB5; border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #2a2737; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #783CB5; }
+    </style>
+</head>
+<body class="p-4 md:p-6">
+    <div class="vault-container">
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row justify-between items-center mb-10 bg-[#1a1825] p-5 rounded-2xl border border-[#2a2737] sticky top-4 z-50 shadow-2xl gap-6">
+            <h1 class="text-2xl font-black tracking-tighter flex items-center gap-3 shrink-0">
+                <i class="fas fa-meteor text-[#783CB5] text-3xl"></i> CELESTI-HELL
+            </h1>
+
+            <!-- Search & Filter -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 w-full max-w-2xl">
+                <div class="relative w-full">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+                    <input type="text" id="vaultSearch" oninput="handleSearch()" placeholder="Search skins or champions..." class="search-input">
+                </div>
+                
+                <div class="flex bg-[#0f0e13] p-1.5 rounded-xl border border-[#2a2737] shrink-0">
+                    <div onclick="setFilter('all')" id="f-all" class="filter-tab active">ALL</div>
+                    <div onclick="setFilter('free')" id="f-free" class="filter-tab">FREE</div>
+                    <div onclick="setFilter('paid')" id="f-paid" class="filter-tab">PAID</div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 shrink-0">
+                <span id="pageIndicator" class="text-xs text-gray-500 font-mono">PAGE 1/1</span>
+                <button onclick="fetchSkins()" class="bg-[#2a2737] hover:bg-[#3a3747] w-10 h-10 rounded-xl flex items-center justify-center transition-all"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div id="skinGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[400px]">
+            <div class="col-span-full flex flex-col items-center justify-center py-32">
+                <div class="loader-spin mb-4"></div>
+                <p class="text-gray-500 font-medium tracking-widest text-xs uppercase">Initializing Engine...</p>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-12 flex justify-center items-center gap-4">
+            <button id="prevBtn" onclick="changePage(-1)" class="page-nav-btn" disabled>
+                <i class="fas fa-chevron-left mr-2"></i> PREV
+            </button>
+            <div id="pageDots" class="flex gap-2"></div>
+            <button id="nextBtn" onclick="changePage(1)" class="page-nav-btn" disabled>
+                NEXT <i class="fas fa-chevron-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_CONFIG = { owner: 'OphirMikhael', repo: 'Celesti-hell', branch: 'main', itemsPerPage: 12 };
+        let store = { all: [], filtered: [], page: 1, filter: 'all', query: '' };
+        let searchDebounce;
+
+        const CHAMPIONS = ["Aatrox", "Ahri", "Akali", "Akshan", "Alistar", "Ambessa", "Amumu", "Anivia", "Annie", "Aphelios", "Ashe", "Aurelion Sol", "Aurora", "Azir", "Bard", "Bel'Veth", "Blitzcrank", "Brand", "Braum", "Briar", "Caitlyn", "Camille", "Cassiopeia", "Cho'Gath", "Corki", "Darius", "Diana", "Dr. Mundo", "Draven", "Ekko", "Elise", "Evelynn", "Ezreal", "Fiddlesticks", "Fiora", "Fizz", "Galio", "Gangplank", "Garen", "Gnar", "Gragas", "Graves", "Gwen", "Hecarim", "Heimerdinger", "Hwei", "Illaoi", "Irelia", "Ivern", "Janna", "Jarvan IV", "Jax", "Jayce", "Jhin", "Jinx", "Kai'Sa", "Kalista", "Karma", "Karthus", "Kassadin", "Katarina", "Kayle", "Kayn", "Kennen", "Kha'Zix", "Kindred", "Kled", "Kog'Maw", "K'Sante", "LeBlanc", "Lee Sin", "Leona", "Lillia", "Lissandra", "Lucian", "Lulu", "Lux", "Malphite", "Malzahar", "Maokai", "Master Yi", "Mel", "Milio", "Miss Fortune", "Mordekaiser", "Morgana", "Naafiri", "Nami", "Nasus", "Nautilus", "Neeko", "Nidalee", "Nilah", "Nocturne", "Nunu", "Olaf", "Orianna", "Ornn", "Pantheon", "Poppy", "Pyke", "Qiyana", "Quinn", "Rakan", "Rammus", "Rek'Sai", "Rell", "Renata Glasc", "Renekton", "Rengar", "Riven", "Rumble", "Ryze", "Samira", "Sejuani", "Senna", "Seraphine", "Sett", "Shaco", "Shen", "Shyvana", "Singed", "Sion", "Sivir", "Skarner", "Smolder", "Sona", "Soraka", "Swain", "Sylas", "Syndra", "Tahm Kench", "Taliyah", "Talon", "Taric", "Teemo", "Thresh", "Tristana", "Trundle", "Tryndamere", "Twisted Fate", "Twitch", "Udyr", "Urgot", "Varus", "Vayne", "Veigar", "Vel'Koz", "Vex", "Vi", "Viego", "Viktor", "Vladimir", "Volibear", "Warwick", "Wukong", "Xayah", "Xerath", "Xin Zhao", "Yasuo", "Yone", "Yorick", "Yuumi", "Zac", "Zed", "Zeri", "Ziggs", "Zilean", "Zoe", "Zyra"];
+
+        async function fetchSkins() {
+            const grid = document.getElementById('skinGrid');
+            grid.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-32"><div class="loader-spin mb-4"></div><p class="text-gray-500 text-xs uppercase">Syncing Database...</p></div>';
+            
+            try {
+                const res = await fetch(`https://api.github.com/repos/${API_CONFIG.owner}/${API_CONFIG.repo}/git/trees/${API_CONFIG.branch}?recursive=1`);
+                const data = await res.json();
+                
+                const groups = {};
+                data.tree.forEach(node => {
+                    if (node.path.startsWith('skins/') && node.type === 'blob') {
+                        const parts = node.path.split('/');
+                        if (parts.length < 3) return;
+
+                        const category = parts[1];
+                        const folder = parts[2];
+                        const fileName = parts[parts.length - 1];
+
+                        if (/\.(zip|z\d+|part\d+|\d{3})$/i.test(fileName)) {
+                            if (!groups[folder]) {
+                                const info = findChamp(folder);
+                                groups[folder] = {
+                                    id: folder,
+                                    name: folder.replace(/_/g, ' '),
+                                    type: category,
+                                    champKey: info.key,
+                                    champName: info.name,
+                                    files: []
+                                };
+                            }
+                            groups[folder].files.push({
+                                name: fileName,
+                                url: `https://raw.githubusercontent.com/${API_CONFIG.owner}/${API_CONFIG.repo}/${API_CONFIG.branch}/${node.path}`
+                            });
+                        }
+                    }
+                });
+
+                store.all = Object.values(groups);
+                updateDisplay();
+            } catch (e) {
+                grid.innerHTML = `<div class="col-span-full text-center text-red-500">Connection error.</div>`;
+            }
+        }
+
+        function findChamp(str) {
+            const low = str.toLowerCase();
+            for (let name of CHAMPIONS) {
+                if (low.includes(name.toLowerCase().replace(/[^a-z]/g, ''))) return { key: name.toLowerCase().replace(/[^a-z]/g, ''), name: name };
+            }
+            return { key: 'unknown', name: '' };
+        }
+
+        function handleSearch() {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => {
+                store.query = document.getElementById('vaultSearch').value.toLowerCase().trim();
+                store.page = 1;
+                updateDisplay();
+            }, 300);
+        }
+
+        function setFilter(type) {
+            store.filter = type;
+            store.page = 1;
+            document.querySelectorAll('.filter-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('f-' + type).classList.add('active');
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            store.filtered = store.all.filter(s => {
+                const typeMatch = store.filter === 'all' || s.type === store.filter;
+                const searchMatch = !store.query || s.name.toLowerCase().includes(store.query) || s.champName.toLowerCase().includes(store.query);
+                return typeMatch && searchMatch;
+            });
+            render();
+        }
+
+        function render() {
+            const grid = document.getElementById('skinGrid');
+            grid.innerHTML = '';
+            
+            const totalPages = Math.ceil(store.filtered.length / API_CONFIG.itemsPerPage);
+            const items = store.filtered.slice((store.page - 1) * API_CONFIG.itemsPerPage, store.page * API_CONFIG.itemsPerPage);
+
+            if (items.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-20 text-gray-600">No skins found.</div>`;
+            }
+
+            items.forEach(skin => {
+                const thumb = `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/characters/${skin.champKey}/skins/base/images/${skin.champKey}_splash_tile_0.jpg`;
+                skin.files.sort((a,b) => a.name.localeCompare(b.name));
+
+                let buttons = skin.files.length === 1 
+                    ? `<a href="${skin.files[0].url}" class="btn-primary block py-2.5 text-xs text-white" download>DOWNLOAD ZIP</a>`
+                    : `<div class="grid grid-cols-2 gap-2">${skin.files.map((p, i) => `<a href="${p.url}" class="bg-[#2a2737] border border-[#3a3747] text-[10px] py-2 text-center text-white rounded hover:bg-[#783CB5]" download>PART ${i+1}</a>`).join('')}</div>`;
+
+                grid.innerHTML += `
+                    <div class="skin-card">
+                        <div class="h-40 relative bg-black">
+                            <img src="${thumb}" class="w-full h-full object-cover opacity-60" onerror="this.src='https://placehold.co/400x200?text=Skin'">
+                            <span class="badge ${skin.type === 'paid' ? 'guisi-badge-paid' : 'guisi-badge-free'}">${skin.type}</span>
+                        </div>
+                        <div class="p-5 flex-grow flex flex-col justify-between">
+                            <div class="mb-4">
+                                <h3 class="text-sm font-bold truncate text-white">${skin.name}</h3>
+                                <p class="text-[10px] text-gray-500 mt-1 uppercase tracking-widest">${skin.champName || 'Custom'}</p>
+                            </div>
+                            ${buttons}
+                        </div>
+                    </div>`;
+            });
+
+            document.getElementById('prevBtn').disabled = store.page === 1;
+            document.getElementById('nextBtn').disabled = store.page >= totalPages || totalPages === 0;
+            document.getElementById('pageIndicator').innerText = `PAGE ${store.page}/${totalPages || 1}`;
+        }
+
+        function changePage(dir) {
+            store.page += dir;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            render();
+        }
+
+        fetchSkins();
+    </script>
+</body>
+</html>
