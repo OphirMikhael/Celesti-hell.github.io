@@ -29,7 +29,9 @@
         ::-webkit-scrollbar-thumb { background: #2a2737; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #783CB5; }
         
-        /* New Command Hint Styling */
+        .banner-glow { box-shadow: 0 0 15px rgba(120, 60, 181, 0.1); border: 1px solid rgba(120, 60, 181, 0.2); }
+        
+        /* Command Hint Styling */
         .cmd-hint { background: rgba(0,0,0,0.3); border: 1px solid rgba(120, 60, 181, 0.2); border-radius: 6px; padding: 8px; margin-top: 10px; }
         .cmd-text { font-family: 'Consolas', monospace; font-size: 9px; color: #a78bfa; word-break: break-all; cursor: pointer; }
         .cmd-text:hover { color: #c4b5fd; }
@@ -37,6 +39,7 @@
 </head>
 <body class="p-4 md:p-6">
     <div class="vault-container">
+        <!-- Sticky Header -->
         <div class="flex flex-col lg:flex-row justify-between items-center mb-10 bg-[#1a1825] p-5 rounded-2xl border border-[#2a2737] sticky top-4 z-50 shadow-2xl gap-6">
             <h1 class="text-2xl font-black tracking-tighter flex items-center gap-3 shrink-0">
                 <i class="fas fa-meteor text-[#783CB5] text-3xl"></i> CELESTI-HELL
@@ -62,12 +65,14 @@
         </div>
 
         <div id="skinGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[400px]">
+            <!-- Initial Loader -->
             <div class="col-span-full flex flex-col items-center justify-center py-32">
                 <div class="loader-spin mb-4"></div>
                 <p class="text-gray-500 font-medium tracking-widest text-xs uppercase">Initializing Engine...</p>
             </div>
         </div>
 
+        <!-- Pagination -->
         <div class="mt-12 flex justify-center items-center gap-4">
             <button id="prevBtn" onclick="changePage(-1)" class="page-nav-btn" disabled>
                 <i class="fas fa-chevron-left mr-2"></i> PREV
@@ -124,7 +129,6 @@
                         const folder = parts[2];
                         const fileName = parts[parts.length - 1];
                         
-                        // Detect zip parts and normal zips
                         if (/\.(zip|z\d+|part\d+|\d{3})$/i.test(fileName)) {
                             if (!groups[folder]) {
                                 const info = findChamp(folder);
@@ -191,6 +195,18 @@
             const grid = document.getElementById('skinGrid');
             grid.innerHTML = '';
 
+            // Restored "oop kinda spoke too soon" Banner Logic
+            if (store.page === 1 && !store.query && store.filter === 'all') {
+                grid.innerHTML += `
+                    <div class="col-span-full mb-6 flex flex-col items-center gap-2">
+                        <div class="relative group w-full max-w-md overflow-hidden rounded-xl banner-glow">
+                            <img src="https://i.imgur.com/ezvHwg3.png" class="w-full h-auto object-cover pointer-events-none transition-transform duration-700 group-hover:scale-105">
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#1a1825] via-transparent to-transparent opacity-40"></div>
+                        </div>
+                        <p class="text-[9px] text-gray-500 italic font-medium uppercase tracking-widest opacity-60">oop kinda spoke too soon</p>
+                    </div>`;
+            }
+
             const totalPages = Math.ceil(store.filtered.length / API_CONFIG.itemsPerPage);
             const items = store.filtered.slice((store.page - 1) * API_CONFIG.itemsPerPage, store.page * API_CONFIG.itemsPerPage);
             
@@ -208,16 +224,15 @@
                     // Normal Single Zip
                     downloadSection = `<a href="${skin.files[0].url}" class="btn-primary block py-2.5 text-xs text-white" download>DOWNLOAD ZIP</a>`;
                 } else {
-                    // Multi-part ZIP
+                    // Multi-part ZIP Logic
                     const partButtons = skin.files.map((p, i) => `
                         <a href="${p.url}" class="bg-[#2a2737] border border-[#3a3747] text-[10px] py-2 text-center text-white rounded hover:bg-[#783CB5]" download>
                             PART ${i+1}
                         </a>
                     `).join('');
                     
-                    // Logic to build the CMD hint
                     const firstFileName = skin.files[0].name;
-                    const baseZipName = firstFileName.split('.part')[0]; // e.g. "skin_name.zip"
+                    const baseZipName = firstFileName.split('.part')[0]; 
                     const outputName = baseZipName.includes('.zip') ? baseZipName.replace('.zip', '_joined.zip') : baseZipName + '_joined.zip';
                     const cmdCommand = `copy /b ${baseZipName}.part* ${outputName}`;
 
